@@ -89,7 +89,9 @@ export function useSessionEditing(session: ClaudeSession) {
   const hasCustomName = !!customName;
   const hasClaudeCodeNamePattern = /^\[.+?\]\s/.test(localSummary ?? "");
   const hasClaudeCodeName =
-    providerId === "claude" && (hasClaudeCodeNameMeta || hasClaudeCodeNamePattern);
+    providerId === "claude"
+      ? hasClaudeCodeNameMeta || hasClaudeCodeNamePattern
+      : supportsNativeRename && !!session.is_renamed;
   const isNamed = hasCustomName || hasClaudeCodeName || !!session.is_renamed;
 
   const startEditing = useCallback(() => {
@@ -367,14 +369,14 @@ export function useSessionEditing(session: ClaudeSession) {
                 ...s,
                 summary: newTitle,
                 is_renamed:
-                  providerId === "claude" ? isNativeRenamed : s.is_renamed,
+                  supportsNativeRename ? isNativeRenamed : s.is_renamed,
               }
             : s
         );
         setSessions(updatedSessions);
       }
     },
-    [providerId, setHasClaudeCodeName, t, session.session_id]
+    [providerId, setHasClaudeCodeName, supportsNativeRename, t, session.session_id]
   );
 
   return {
