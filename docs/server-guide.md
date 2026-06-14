@@ -20,12 +20,12 @@ Run Claude Code History Viewer as a web server — access your conversation hist
 
 ## Which method is right for me?
 
-| Method | Best for | Difficulty | Cost |
-|--------|----------|------------|------|
-| **Local + Tunnel** | Quick test, demo | Easy | Free |
-| **VPS + Binary** | 24/7 remote access | Medium | ~$5/mo |
-| **Docker on VPS** | Docker-familiar users | Medium | ~$5/mo |
-| **Build from source** | Contributors, forks | Advanced | ~$5/mo |
+| Method                | Best for              | Difficulty | Cost   |
+| --------------------- | --------------------- | ---------- | ------ |
+| **Local + Tunnel**    | Quick test, demo      | Easy       | Free   |
+| **VPS + Binary**      | 24/7 remote access    | Medium     | ~$5/mo |
+| **Docker on VPS**     | Docker-familiar users | Medium     | ~$5/mo |
+| **Build from source** | Contributors, forks   | Advanced   | ~$5/mo |
 
 ---
 
@@ -114,14 +114,15 @@ This works from any device — phone on LTE, another computer, anywhere.
 
 Sign up with any VPS provider. Budget options (~$5/month):
 
-| Provider | Link | Notes |
-|----------|------|-------|
-| DigitalOcean | [digitalocean.com](https://www.digitalocean.com) | $4/mo Droplet |
-| Vultr | [vultr.com](https://www.vultr.com) | $3.50/mo |
-| Hetzner | [hetzner.com](https://www.hetzner.com) | 3.79€/mo (Europe) |
-| Oracle Cloud | [cloud.oracle.com](https://www.oracle.com/cloud/free/) | Free tier (ARM) |
+| Provider     | Link                                                   | Notes             |
+| ------------ | ------------------------------------------------------ | ----------------- |
+| DigitalOcean | [digitalocean.com](https://www.digitalocean.com)       | $4/mo Droplet     |
+| Vultr        | [vultr.com](https://www.vultr.com)                     | $3.50/mo          |
+| Hetzner      | [hetzner.com](https://www.hetzner.com)                 | 3.79€/mo (Europe) |
+| Oracle Cloud | [cloud.oracle.com](https://www.oracle.com/cloud/free/) | Free tier (ARM)   |
 
 When creating a server:
+
 - **OS**: Ubuntu 22.04 or 24.04
 - **Size**: 1 GB RAM is enough
 - **Region**: Choose closest to you
@@ -270,6 +271,7 @@ http://203.0.113.50:3727?token=YOUR_TOKEN_HERE
 ### Docker Compose configuration
 
 The included `docker-compose.yml` mounts these directories as read-only:
+
 - `~/.claude` — Claude Code conversations
 - `~/.codex` — Codex CLI conversations
 - `~/.local/share/opencode` — OpenCode conversations
@@ -335,17 +337,21 @@ Edit frontend code → `pnpm build` → refresh browser.
 
 ### CLI options
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--serve` | — | **Required.** Start server mode |
-| `--port <number>` | `3727` | Server port |
-| `--host <address>` | `0.0.0.0` | Bind address (`127.0.0.1` for local only) |
-| `--base-path <path>` | `/` | Serve WebUI under a path prefix, e.g. `/cchv` |
-| `--token <value>` | auto (uuid) | Set a fixed auth token |
-| `--no-auth` | — | Disable authentication on loopback hosts only |
-| `--allow-unsafe-no-auth` | — | Allow `--no-auth` on network-reachable hosts (dangerous) |
-| `--read-only` | — | Reject mutating API calls such as rename, delete, settings save, and archive changes |
-| `--dist <path>` | embedded | Serve frontend from filesystem instead of embedded |
+| Flag                               | Default     | Description                                                                          |
+| ---------------------------------- | ----------- | ------------------------------------------------------------------------------------ |
+| `--serve`                          | —           | **Required.** Start server mode                                                      |
+| `--port <number>`                  | `3727`      | Server port                                                                          |
+| `--host <address>`                 | `0.0.0.0`   | Bind address (`127.0.0.1` for local only)                                            |
+| `--base-path <path>`               | `/`         | Serve WebUI under a path prefix, e.g. `/cchv`                                        |
+| `--token <value>`                  | auto (uuid) | Set a fixed auth token                                                               |
+| `--auth-user <name>`               | —           | Enable account login with this username                                              |
+| `--auth-password-hash <hash>`      | —           | Argon2id PHC password hash for account login                                         |
+| `--print-password-hash <password>` | —           | Print an Argon2id PHC hash and exit                                                  |
+| `--secure-cookies`                 | off         | Add `Secure` to auth cookies for HTTPS reverse proxies                               |
+| `--no-auth`                        | —           | Disable authentication on loopback hosts only                                        |
+| `--allow-unsafe-no-auth`           | —           | Allow `--no-auth` on network-reachable hosts (dangerous)                             |
+| `--read-only`                      | —           | Reject mutating API calls such as rename, delete, settings save, and archive changes |
+| `--dist <path>`                    | embedded    | Serve frontend from filesystem instead of embedded                                   |
 
 When a reverse proxy mounts the app under a subpath, pass the same prefix to the server:
 
@@ -355,12 +361,34 @@ cchv-server --serve --base-path /cchv
 
 ### Authentication
 
-All `/api/*` endpoints require a valid token, either through the browser auth cookie or a Bearer header. The token is auto-generated on each start, saved locally, and only a short preview is printed to stderr.
+All `/api/*` endpoints require authentication. Token auth remains the default for backward compatibility; account auth enables a username/password login with server-side sessions.
 
-| Access method | How |
-|---------------|-----|
-| Browser | `http://host:3727?token=TOKEN` (exchanged for an HttpOnly cookie) |
-| API / curl | `Authorization: Bearer TOKEN` header |
+#### Account login
+
+Generate an Argon2id PHC password hash:
+
+```bash
+CCHV_AUTH_PASSWORD='choose-a-strong-password' cchv-server --serve --print-password-hash
+```
+
+Start the server with account auth:
+
+```bash
+CCHV_AUTH_USERNAME=admin \
+CCHV_AUTH_PASSWORD_HASH='$argon2id$...' \
+cchv-server --serve --secure-cookies
+```
+
+Account mode stores only the password hash, issues an HttpOnly session cookie, rate-limits failed login attempts, and requires CSRF headers for mutating API calls. Use `--secure-cookies` when the browser reaches the app over HTTPS.
+
+#### Token login
+
+When account auth is not configured, the token is auto-generated on each start, saved locally, and only a short preview is printed to stderr.
+
+| Access method     | How                                                                 |
+| ----------------- | ------------------------------------------------------------------- |
+| Browser           | `http://host:3727?token=TOKEN` (exchanged for an HttpOnly cookie)   |
+| API / curl        | `Authorization: Bearer TOKEN` header                                |
 | SSE (EventSource) | Auth cookie after browser login; `?token=TOKEN` remains as fallback |
 
 **Tip**: Use `--token my-fixed-token` for a persistent token that doesn't change between restarts. Especially useful with systemd.
@@ -386,16 +414,17 @@ GET /health
 
 ### "Connection refused" from another device
 
-| Cause | Fix |
-|-------|-----|
-| Server not running | Check `systemctl status cchv.service` or start manually |
-| Wrong IP address | Use your VPS's **public IP**, not `0.0.0.0` or `192.168.x.x` |
+| Cause                  | Fix                                                               |
+| ---------------------- | ----------------------------------------------------------------- |
+| Server not running     | Check `systemctl status cchv.service` or start manually           |
+| Wrong IP address       | Use your VPS's **public IP**, not `0.0.0.0` or `192.168.x.x`      |
 | Firewall blocking port | `sudo ufw allow 3727/tcp` and check VPS provider's security group |
-| Port already in use | `lsof -ti :3727 \| xargs kill` or use `--port 3728` |
+| Port already in use    | `lsof -ti :3727 \| xargs kill` or use `--port 3728`               |
 
 ### "401 Unauthorized"
 
 The token is wrong or missing. Check:
+
 1. Token in URL: `?token=CORRECT_TOKEN`
 2. Token in API header: `Authorization: Bearer CORRECT_TOKEN`
 3. Browser login cookie was created after opening the `?token=...` URL
@@ -404,6 +433,7 @@ The token is wrong or missing. Check:
 ### Can't access from phone (LTE) but works on same WiFi
 
 Your server is on a **local machine**, not a VPS. Local machines have private IPs (`192.168.x.x`) that aren't reachable from the internet. Options:
+
 1. Use [Method 1 (Tunnel)](#method-1-local--tunnel) for temporary access
 2. Use [Method 2 (VPS)](#method-2-vps-with-pre-built-binary) for permanent access
 
@@ -430,4 +460,4 @@ echo "your-domain.com { reverse_proxy localhost:3727 }" | sudo tee /etc/caddy/Ca
 sudo systemctl restart caddy
 ```
 
-Then access via `https://your-domain.com?token=...`.
+Then start the server with `--secure-cookies` and access via `https://your-domain.com`.

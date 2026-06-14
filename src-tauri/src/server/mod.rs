@@ -11,19 +11,19 @@
 //! - **External**: `--dist <path>` serves assets from the filesystem.
 //!   Useful during development or when overriding the built-in frontend.
 
+pub mod auth;
 pub mod handlers;
 pub mod state;
 
 use axum::body::Body;
 use axum::extract::{DefaultBodyLimit, Request, State};
-use axum::http::{header, HeaderValue, Method, StatusCode};
+use axum::http::{header, HeaderMap, HeaderName, HeaderValue, Method, StatusCode};
 use axum::middleware::Next;
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{middleware, Json, Router};
 use rust_embed::Embed;
-use serde::Deserialize;
 use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -32,6 +32,10 @@ use tokio_stream::{Stream, StreamExt};
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
+use self::auth::{
+    auth_error_response, clear_auth_cookies_response, csrf_valid, login_response, AuthLoginRequest,
+    AuthState, AuthenticatedRequest,
+};
 use self::handlers as h;
 use self::state::AppState;
 
@@ -62,9 +66,6 @@ const READ_ONLY_BLOCKED_API_PATHS: &[&str] = &[
     "/delete_archive",
     "/rename_archive",
 ];
-const AUTH_COOKIE_NAME: &str = "cchv_auth";
-const AUTH_COOKIE_MAX_AGE_SECONDS: u64 = 60 * 60 * 24 * 30;
-
 /// Frontend assets embedded at compile time from the `dist/` directory.
 ///
 /// When building with `cargo build --features webui-server`, the contents of
@@ -91,19 +92,27 @@ pub fn build_router(
     let base_path = normalize_base_path(base_path).expect("Invalid WebUI base path");
 
     // Restrict CORS when auth is enabled; permissive only for --no-auth.
-    let cors = if state.auth_token.is_some() {
+    let cors = if state.auth.is_enabled() {
         let origin = format!("http://{host}:{port}")
             .parse::<HeaderValue>()
             .unwrap_or_else(|_| HeaderValue::from_static("http://localhost:3727"));
         CorsLayer::new()
             .allow_origin(origin)
             .allow_methods([Method::GET, Method::POST])
-            .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
+            .allow_headers([
+                header::CONTENT_TYPE,
+                header::AUTHORIZATION,
+                HeaderName::from_static("x-csrf-token"),
+            ])
     } else {
         CorsLayer::new()
             .allow_origin(tower_http::cors::Any)
             .allow_methods([Method::GET, Method::POST])
-            .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
+            .allow_headers([
+                header::CONTENT_TYPE,
+                header::AUTHORIZATION,
+                HeaderName::from_static("x-csrf-token"),
+            ])
     };
 
     let protected_api = Router::new()
@@ -403,53 +412,19 @@ fn spa_index_response(index: SpaIndex) -> Response {
 // Auth middleware
 // ---------------------------------------------------------------------------
 
-#[derive(Deserialize)]
-struct AuthLoginRequest {
-    token: String,
-}
-
 async fn auth_login_handler(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<AuthLoginRequest>,
 ) -> Response {
-    let Some(expected) = &state.auth_token else {
-        return auth_cookie_clear_response();
-    };
-
-    let token = payload.token.trim();
-    if !constant_time_eq(token.as_bytes(), expected.as_bytes()) {
-        return StatusCode::UNAUTHORIZED.into_response();
+    match state.auth.login(&payload) {
+        Ok(outcome) => login_response(outcome, state.auth.secure_cookies()),
+        Err(failure) => auth_error_response(failure),
     }
-
-    auth_cookie_set_response(token)
 }
 
-async fn auth_logout_handler() -> Response {
-    auth_cookie_clear_response()
-}
-
-fn auth_cookie_set_response(token: &str) -> Response {
-    let encoded = urlencoding::encode(token);
-    let cookie = format!(
-        "{AUTH_COOKIE_NAME}={encoded}; HttpOnly; SameSite=Lax; Path=/; Max-Age={AUTH_COOKIE_MAX_AGE_SECONDS}"
-    );
-
-    (
-        StatusCode::NO_CONTENT,
-        [(header::SET_COOKIE, HeaderValue::from_str(&cookie).unwrap())],
-    )
-        .into_response()
-}
-
-fn auth_cookie_clear_response() -> Response {
-    (
-        StatusCode::NO_CONTENT,
-        [(
-            header::SET_COOKIE,
-            HeaderValue::from_static("cchv_auth=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0"),
-        )],
-    )
-        .into_response()
+async fn auth_logout_handler(State(state): State<Arc<AppState>>, headers: HeaderMap) -> Response {
+    state.auth.logout(&headers);
+    clear_auth_cookies_response(state.auth.secure_cookies())
 }
 
 /// Apply response security headers globally.
@@ -496,80 +471,30 @@ fn is_read_only_blocked_path(path: &str) -> bool {
 ///
 /// Accepts the token from:
 ///   - `Authorization: Bearer <token>` header (normal API calls)
-///   - `cchv_auth=<token>` `HttpOnly` cookie (browser `WebUI` calls)
-///   - `?token=<token>` query parameter (`EventSource` / SSE connections)
+///   - legacy `cchv_auth=<token>` `HttpOnly` cookie (token mode)
+///   - `cchv_session=<random-session-id>` `HttpOnly` cookie (account mode)
+///   - `?token=<token>` query parameter for SSE only (legacy token mode)
 ///
-/// When `auth_token` is `None` (i.e. `--no-auth`), all requests pass through.
+/// When auth is disabled (`--no-auth`), all requests pass through.
 async fn auth_middleware(
     State(state): State<Arc<AppState>>,
     request: Request,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let Some(expected) = &state.auth_token else {
-        return Ok(next.run(request).await);
-    };
-
-    // 1. Check Authorization header
-    if let Some(header) = request.headers().get("authorization") {
-        if let Ok(value) = header.to_str() {
-            if let Some(token) = value.strip_prefix("Bearer ") {
-                if constant_time_eq(token.as_bytes(), expected.as_bytes()) {
-                    return Ok(next.run(request).await);
-                }
+    match state.auth.authenticate(&request) {
+        AuthenticatedRequest::None if matches!(state.auth, AuthState::Disabled) => {
+            Ok(next.run(request).await)
+        }
+        AuthenticatedRequest::Token => Ok(next.run(request).await),
+        AuthenticatedRequest::Account { csrf_token } => {
+            if csrf_valid(&request, &csrf_token) {
+                Ok(next.run(request).await)
+            } else {
+                Err(StatusCode::FORBIDDEN)
             }
         }
+        AuthenticatedRequest::None => Err(StatusCode::UNAUTHORIZED),
     }
-
-    // 2. Check HttpOnly auth cookie set by /api/auth/login.
-    if let Some(token) = auth_cookie_token(&request) {
-        if constant_time_eq(token.as_bytes(), expected.as_bytes()) {
-            return Ok(next.run(request).await);
-        }
-    }
-
-    // 3. Check ?token= query parameter only for SSE endpoint
-    // (EventSource cannot set custom Authorization headers).
-    if allow_query_token(&request) {
-        if let Some(query) = request.uri().query() {
-            for pair in query.split('&') {
-                if let Some(token) = pair.strip_prefix("token=") {
-                    let decoded = urlencoding::decode(token).unwrap_or_default();
-                    if constant_time_eq(decoded.as_bytes(), expected.as_bytes()) {
-                        return Ok(next.run(request).await);
-                    }
-                }
-            }
-        }
-    }
-
-    Err(StatusCode::UNAUTHORIZED)
-}
-
-fn auth_cookie_token(request: &Request) -> Option<String> {
-    let cookie_header = request.headers().get(header::COOKIE)?.to_str().ok()?;
-    for part in cookie_header.split(';') {
-        let trimmed = part.trim();
-        if let Some(value) = trimmed.strip_prefix(&format!("{AUTH_COOKIE_NAME}=")) {
-            return Some(urlencoding::decode(value).ok()?.into_owned());
-        }
-    }
-    None
-}
-
-/// Query-token auth is allowed only for SSE endpoint requests.
-fn allow_query_token(request: &Request) -> bool {
-    if request.method() != Method::GET {
-        return false;
-    }
-    matches!(request.uri().path(), "/api/events" | "/events")
-}
-
-/// Constant-time byte comparison to prevent timing side-channel attacks on token validation.
-fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
-    if a.len() != b.len() {
-        return false;
-    }
-    a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
 }
 
 // ---------------------------------------------------------------------------
@@ -736,6 +661,10 @@ async fn shutdown_signal() {
 mod tests {
     use super::*;
     use crate::commands::metadata::MetadataState;
+    use crate::server::auth::{
+        hash_password_argon2id, AccountAuth, CSRF_COOKIE_NAME, LEGACY_AUTH_COOKIE_NAME,
+        SESSION_COOKIE_NAME,
+    };
     use axum::body::to_bytes;
     use axum::body::Body;
     use tower::ServiceExt;
@@ -746,34 +675,250 @@ mod tests {
         Arc::new(AppState {
             metadata: Arc::new(MetadataState::default()),
             start_time: std::time::Instant::now(),
-            auth_token: auth_token.map(str::to_string),
+            auth: auth_token
+                .map(|token| AuthState::Token {
+                    token: token.to_string(),
+                    secure_cookies: false,
+                })
+                .unwrap_or(AuthState::Disabled),
             read_only: false,
             event_tx,
         })
     }
 
+    fn test_account_state() -> Arc<AppState> {
+        let (event_tx, _rx) =
+            tokio::sync::broadcast::channel::<crate::commands::watcher::FileWatchEvent>(1);
+        let password_hash = hash_password_argon2id("secret-password").unwrap();
+        Arc::new(AppState {
+            metadata: Arc::new(MetadataState::default()),
+            start_time: std::time::Instant::now(),
+            auth: AuthState::Account(Arc::new(AccountAuth::new(
+                "admin".to_string(),
+                password_hash,
+                false,
+            ))),
+            read_only: false,
+            event_tx,
+        })
+    }
+
+    fn cookie_header_from_response(response: &Response) -> String {
+        response
+            .headers()
+            .get_all(header::SET_COOKIE)
+            .iter()
+            .filter_map(|value| value.to_str().ok())
+            .filter_map(|cookie| cookie.split(';').next())
+            .collect::<Vec<_>>()
+            .join("; ")
+    }
+
     #[test]
     fn test_allow_query_token_only_for_sse_get() {
+        let auth = AuthState::Token {
+            token: "abc".to_string(),
+            secure_cookies: false,
+        };
         let sse_get = Request::builder()
             .method(Method::GET)
             .uri("/api/events?token=abc")
             .body(Body::empty())
             .unwrap();
-        assert!(allow_query_token(&sse_get));
+        assert!(matches!(
+            auth.authenticate(&sse_get),
+            AuthenticatedRequest::Token
+        ));
 
         let api_post = Request::builder()
             .method(Method::POST)
             .uri("/api/scan_projects?token=abc")
             .body(Body::empty())
             .unwrap();
-        assert!(!allow_query_token(&api_post));
+        assert!(matches!(
+            auth.authenticate(&api_post),
+            AuthenticatedRequest::None
+        ));
 
         let non_sse_get = Request::builder()
             .method(Method::GET)
             .uri("/api/load_project_sessions?token=abc")
             .body(Body::empty())
             .unwrap();
-        assert!(!allow_query_token(&non_sse_get));
+        assert!(matches!(
+            auth.authenticate(&non_sse_get),
+            AuthenticatedRequest::None
+        ));
+    }
+    #[test]
+    fn test_auth_cookie_token_reads_named_cookie() {
+        let auth = AuthState::Token {
+            token: "abc 123".to_string(),
+            secure_cookies: false,
+        };
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri("/api/scan_projects")
+            .header(header::COOKIE, "theme=dark; cchv_auth=abc%20123; other=1")
+            .body(Body::empty())
+            .unwrap();
+
+        assert!(matches!(
+            auth.authenticate(&request),
+            AuthenticatedRequest::Token
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_auth_login_sets_http_only_cookie() {
+        let app = build_router(
+            test_state(Some("secret-token")),
+            "127.0.0.1",
+            3727,
+            None,
+            "/",
+        );
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri("/api/auth/login")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(r#"{"token":"secret-token"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+        let cookie = response
+            .headers()
+            .get(header::SET_COOKIE)
+            .unwrap()
+            .to_str()
+            .unwrap();
+        assert!(cookie.contains(&format!("{LEGACY_AUTH_COOKIE_NAME}=secret-token")));
+        assert!(cookie.contains("HttpOnly"));
+        assert!(cookie.contains("SameSite=Lax"));
+        assert!(cookie.contains("Path=/"));
+        assert!(cookie.contains("Max-Age=604800"));
+    }
+
+    #[tokio::test]
+    async fn test_auth_cookie_allows_protected_api() {
+        let app = build_router(
+            test_state(Some("secret-token")),
+            "127.0.0.1",
+            3727,
+            None,
+            "/",
+        );
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri("/api/events")
+                    .header(header::COOKIE, "theme=dark; cchv_auth=secret-token")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_invalid_auth_login_is_rejected() {
+        let app = build_router(
+            test_state(Some("secret-token")),
+            "127.0.0.1",
+            3727,
+            None,
+            "/",
+        );
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri("/api/auth/login")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(r#"{"token":"wrong"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn test_account_login_sets_session_and_csrf_cookies() {
+        let app = build_router(test_account_state(), "127.0.0.1", 3727, None, "/");
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri("/api/auth/login")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(
+                        r#"{"username":"admin","password":"secret-password"}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+        let cookies = response
+            .headers()
+            .get_all(header::SET_COOKIE)
+            .iter()
+            .filter_map(|value| value.to_str().ok())
+            .collect::<Vec<_>>();
+        assert!(cookies
+            .iter()
+            .any(|cookie| cookie.contains(&format!("{SESSION_COOKIE_NAME}="))
+                && cookie.contains("HttpOnly")
+                && cookie.contains("SameSite=Strict")));
+        assert!(cookies.iter().any(|cookie| {
+            cookie.contains(&format!("{CSRF_COOKIE_NAME}=")) && cookie.contains("SameSite=Strict")
+        }));
+    }
+
+    #[tokio::test]
+    async fn test_account_session_requires_csrf_for_post() {
+        let app = build_router(test_account_state(), "127.0.0.1", 3727, None, "/");
+        let login_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri("/api/auth/login")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(
+                        r#"{"username":"admin","password":"secret-password"}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let cookie_header = cookie_header_from_response(&login_response);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri("/api/get_claude_folder_path")
+                    .header(header::COOKIE, cookie_header)
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
     }
 
     #[test]
@@ -833,101 +978,6 @@ mod tests {
         assert!(injected.contains("<base href=\"/tools/history/\" />"));
         assert!(injected.contains("window.__WEBUI_BASE_PATH__ = \"/tools/history\";"));
         assert!(injected.find("<base").unwrap() < injected.find("<title>").unwrap());
-    }
-
-    #[test]
-    fn test_auth_cookie_token_reads_named_cookie() {
-        let request = Request::builder()
-            .method(Method::POST)
-            .uri("/api/scan_projects")
-            .header(header::COOKIE, "theme=dark; cchv_auth=abc%20123; other=1")
-            .body(Body::empty())
-            .unwrap();
-
-        assert_eq!(auth_cookie_token(&request), Some("abc 123".to_string()));
-    }
-
-    #[tokio::test]
-    async fn test_auth_login_sets_http_only_cookie() {
-        let app = build_router(
-            test_state(Some("secret-token")),
-            "127.0.0.1",
-            3727,
-            None,
-            "/",
-        );
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .method(Method::POST)
-                    .uri("/api/auth/login")
-                    .header(header::CONTENT_TYPE, "application/json")
-                    .body(Body::from(r#"{"token":"secret-token"}"#))
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::NO_CONTENT);
-        let cookie = response
-            .headers()
-            .get(header::SET_COOKIE)
-            .unwrap()
-            .to_str()
-            .unwrap();
-        assert!(cookie.contains("cchv_auth=secret-token"));
-        assert!(cookie.contains("HttpOnly"));
-        assert!(cookie.contains("SameSite=Lax"));
-        assert!(cookie.contains("Path=/"));
-        assert!(cookie.contains("Max-Age=2592000"));
-    }
-
-    #[tokio::test]
-    async fn test_auth_cookie_allows_protected_api() {
-        let app = build_router(
-            test_state(Some("secret-token")),
-            "127.0.0.1",
-            3727,
-            None,
-            "/",
-        );
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .method(Method::GET)
-                    .uri("/api/events")
-                    .header(header::COOKIE, "theme=dark; cchv_auth=secret-token")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-    }
-
-    #[tokio::test]
-    async fn test_invalid_auth_login_is_rejected() {
-        let app = build_router(
-            test_state(Some("secret-token")),
-            "127.0.0.1",
-            3727,
-            None,
-            "/",
-        );
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .method(Method::POST)
-                    .uri("/api/auth/login")
-                    .header(header::CONTENT_TYPE, "application/json")
-                    .body(Body::from(r#"{"token":"wrong"}"#))
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]

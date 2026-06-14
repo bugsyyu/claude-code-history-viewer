@@ -36,11 +36,11 @@ Browse, search, and analyze conversations from **Claude Code**, **Gemini CLI**, 
 
 **Desktop app** — download and run:
 
-| Platform | Download |
-|----------|----------|
-| macOS (Universal) | [`.dmg`](https://github.com/jhlee0409/claude-code-history-viewer/releases/latest) |
-| Windows (x64) | [`.exe`](https://github.com/jhlee0409/claude-code-history-viewer/releases/latest) / [`.zip` (portable)](https://github.com/jhlee0409/claude-code-history-viewer/releases/latest) |
-| Linux (x64) | [`.AppImage`](https://github.com/jhlee0409/claude-code-history-viewer/releases/latest) |
+| Platform          | Download                                                                                                                                                                         |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| macOS (Universal) | [`.dmg`](https://github.com/jhlee0409/claude-code-history-viewer/releases/latest)                                                                                                |
+| Windows (x64)     | [`.exe`](https://github.com/jhlee0409/claude-code-history-viewer/releases/latest) / [`.zip` (portable)](https://github.com/jhlee0409/claude-code-history-viewer/releases/latest) |
+| Linux (x64)       | [`.AppImage`](https://github.com/jhlee0409/claude-code-history-viewer/releases/latest)                                                                                           |
 
 **Homebrew** (macOS):
 
@@ -65,17 +65,17 @@ AI coding assistants generate thousands of conversation messages, but none of th
 
 **Nine assistants. One viewer.** Switch between Claude Code, Gemini CLI, Antigravity, Codex CLI, Cline, Cursor, Aider, OpenCode, and ForgeCode sessions seamlessly — compare token usage, search across providers, and analyze your workflow in a single interface.
 
-| Provider | Data Location | What You Get |
-|----------|--------------|--------------|
-| **Claude Code** | `~/.claude/projects/` | Full conversation history, tool use, thinking, costs |
-| **Gemini CLI** | `~/.gemini/history/` | Conversation history with tool calls |
-| **Antigravity** | `~/.gemini/antigravity/` | Conversation state under `brain/` plus token monitor data under `.token-monitor/rpc-cache/v1/` |
-| **Codex CLI** | `~/.codex/sessions/` | Session rollouts with agent responses |
-| **Cline** | `~/.cline/tasks/` | Task-based conversation history |
-| **Cursor** | `~/.cursor/` | Composer and chat conversations |
-| **Aider** | Project directories | Chat history and edit logs |
-| **OpenCode** | `~/.local/share/opencode/` | Conversation sessions and tool results |
-| **ForgeCode** | `~/.forge/.forge.db` | Conversation history from SQLite database |
+| Provider        | Data Location              | What You Get                                                                                   |
+| --------------- | -------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Claude Code** | `~/.claude/projects/`      | Full conversation history, tool use, thinking, costs                                           |
+| **Gemini CLI**  | `~/.gemini/history/`       | Conversation history with tool calls                                                           |
+| **Antigravity** | `~/.gemini/antigravity/`   | Conversation state under `brain/` plus token monitor data under `.token-monitor/rpc-cache/v1/` |
+| **Codex CLI**   | `~/.codex/sessions/`       | Session rollouts with agent responses                                                          |
+| **Cline**       | `~/.cline/tasks/`          | Task-based conversation history                                                                |
+| **Cursor**      | `~/.cursor/`               | Composer and chat conversations                                                                |
+| **Aider**       | Project directories        | Chat history and edit logs                                                                     |
+| **OpenCode**    | `~/.local/share/opencode/` | Conversation sessions and tool results                                                         |
+| **ForgeCode**   | `~/.forge/.forge.db`       | Conversation history from SQLite database                                                      |
 
 No vendor lock-in. No cloud dependency. Your local conversation files, beautifully rendered.
 
@@ -99,64 +99,64 @@ Antigravity note: the viewer resolves the Antigravity root as `~/.gemini/antigra
 
 ### Core
 
-| Feature | Description |
-|---------|-------------|
+| Feature                    | Description                                                                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Multi-Provider Support** | Unified viewer for **Claude Code**, **Gemini CLI**, **Antigravity**, **Codex CLI**, **Cline**, **Cursor**, **Aider**, **OpenCode**, and **ForgeCode** — filter by provider, compare across tools |
-| **Conversation Browser** | Navigate conversations by project/session with worktree grouping |
-| **Global Search** | Search across all conversations from all providers instantly |
-| **Analytics Dashboard** | Dual-mode token stats (billing vs conversation), cost breakdown, and provider distribution charts |
-| **Session Board** | Multi-session visual analysis with pixel view, attribute brushing, and activity timeline |
-| **Settings Manager** | Scope-aware Claude Code settings editor with MCP server management |
-| **Message Navigator** | Right-side collapsible TOC for quick conversation navigation |
-| **Real-time Monitoring** | Live session file watching for instant updates |
+| **Conversation Browser**   | Navigate conversations by project/session with worktree grouping                                                                                                                                 |
+| **Global Search**          | Search across all conversations from all providers instantly                                                                                                                                     |
+| **Analytics Dashboard**    | Dual-mode token stats (billing vs conversation), cost breakdown, and provider distribution charts                                                                                                |
+| **Session Board**          | Multi-session visual analysis with pixel view, attribute brushing, and activity timeline                                                                                                         |
+| **Settings Manager**       | Scope-aware Claude Code settings editor with MCP server management                                                                                                                               |
+| **Message Navigator**      | Right-side collapsible TOC for quick conversation navigation                                                                                                                                     |
+| **Real-time Monitoring**   | Live session file watching for instant updates                                                                                                                                                   |
 
 ### Provider Notes
 
-| Provider | Notes |
-|---------|-------|
+| Provider        | Notes                                                                                                                                                                                                     |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Antigravity** | Loaded through the standard provider pipeline. Sessions come from the token monitor cache and participate in project/session views, token stats, analytics, and global search without a separate UI mode. |
 
 ### New in v1.13.0
 
-| Feature | Description |
-|---------|-------------|
-| **macOS Custom Title Bar** | Draggable overlay header replaces the legacy macOS title bar for consistent screen-space use; Linux/Windows unaffected |
-| **Session Source Filter** | Filter sessions by where they were created — CLI, VS Code, or Desktop — using Claude Code's `entrypoint` field |
-| **Codex Resume Support** | Right-click "Copy Resume Command" now works for Codex sessions and prefixes `cd '<cwd>' && ` so paste-and-run lands in the original directory |
-| **Pricing Accuracy** | Fixed `claude-opus-4-7` 3× overcharge; added `gpt-5.4` / `gpt-5.5` pricing with Codex cached-token handling |
-| **macOS Updater Reliability** | Native OS-level relaunch fallback for the Tauri v2 macOS relaunch bug — no more "please quit and reopen" |
+| Feature                       | Description                                                                                                                                   |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **macOS Custom Title Bar**    | Draggable overlay header replaces the legacy macOS title bar for consistent screen-space use; Linux/Windows unaffected                        |
+| **Session Source Filter**     | Filter sessions by where they were created — CLI, VS Code, or Desktop — using Claude Code's `entrypoint` field                                |
+| **Codex Resume Support**      | Right-click "Copy Resume Command" now works for Codex sessions and prefixes `cd '<cwd>' && ` so paste-and-run lands in the original directory |
+| **Pricing Accuracy**          | Fixed `claude-opus-4-7` 3× overcharge; added `gpt-5.4` / `gpt-5.5` pricing with Codex cached-token handling                                   |
+| **macOS Updater Reliability** | Native OS-level relaunch fallback for the Tauri v2 macOS relaunch bug — no more "please quit and reopen"                                      |
 
 ### v1.12.0
 
-| Feature | Description |
-|---------|-------------|
-| **Two New Providers** | Added **Antigravity** and **ForgeCode** — now supports 9 AI coding assistants |
+| Feature                     | Description                                                                                               |
+| --------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Two New Providers**       | Added **Antigravity** and **ForgeCode** — now supports 9 AI coding assistants                             |
 | **External Session Launch** | New `--session <uuid>` CLI flag with single-instance enforcement and macOS Apple Events for re-invocation |
-| **Sub-agent Filter** | Toggle sub-agent messages on/off from the header dropdown |
-| **Context Menu Polish** | Right-click menus rendered in portal for cursor-precise anchoring; clamp to panel bounds; close on scroll |
-| **Custom Directory** | Custom Claude directory selection now applies instantly without restart |
+| **Sub-agent Filter**        | Toggle sub-agent messages on/off from the header dropdown                                                 |
+| **Context Menu Polish**     | Right-click menus rendered in portal for cursor-precise anchoring; clamp to panel bounds; close on scroll |
+| **Custom Directory**        | Custom Claude directory selection now applies instantly without restart                                   |
 
 ### v1.11.0
 
-| Feature | Description |
-|---------|-------------|
-| **Auto-refresh Sessions** | Session list auto-refreshes on file changes; auto-scroll to bottom on new messages |
-| **Project Panel Search** | Search box plus horizontal scrollbar for long project names |
-| **Session Right-click Menu** | Copy session ID, resume command, file path; delete session; show JSONL file; native rename with search integration |
-| **Sub-agent Conversation History** | View sub-agent (sidechain) conversation history |
-| **Custom Claude Config Directories** | Support directories outside `~/.claude` |
+| Feature                              | Description                                                                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| **Auto-refresh Sessions**            | Session list auto-refreshes on file changes; auto-scroll to bottom on new messages                                 |
+| **Project Panel Search**             | Search box plus horizontal scrollbar for long project names                                                        |
+| **Session Right-click Menu**         | Copy session ID, resume command, file path; delete session; show JSONL file; native rename with search integration |
+| **Sub-agent Conversation History**   | View sub-agent (sidechain) conversation history                                                                    |
+| **Custom Claude Config Directories** | Support directories outside `~/.claude`                                                                            |
 
 > Older releases: see [CHANGELOG.md](./CHANGELOG.md) for v1.10.0 and earlier.
 
 ### More
 
-| Feature | Description |
-|---------|-------------|
+| Feature                  | Description                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | **Session Context Menu** | Copy session ID, resume command, file path; delete session, show JSONL file; native rename with search integration |
-| **ANSI Color Rendering** | Terminal output displayed with original ANSI colors |
-| **Multi-language** | English, Korean, Japanese, Chinese (Simplified & Traditional) |
-| **Recent Edits** | View file modification history and restore |
-| **Auto-update** | Built-in updater with skip/postpone options |
+| **ANSI Color Rendering** | Terminal output displayed with original ANSI colors                                                                |
+| **Multi-language**       | English, Korean, Japanese, Chinese (Simplified & Traditional)                                                      |
+| **Recent Edits**         | View file modification history and restore                                                                         |
+| **Auto-update**          | Built-in updater with skip/postpone options                                                                        |
 
 ## Installation
 
@@ -190,6 +190,7 @@ brew uninstall --cask claude-code-history-viewer
 > **Migrating from manual (.dmg) installation?**
 > Remove the existing app before installing via Homebrew to avoid conflicts.
 > Choose **one** installation method — do not mix manual and Homebrew installs.
+>
 > ```bash
 > # Remove the manually installed app first
 > rm -rf "/Applications/Claude Code History Viewer.app"
@@ -255,39 +256,59 @@ Open the URL in your browser — the token is saved automatically.
 
 ### Pre-built Binaries
 
-| Platform | Asset |
-|----------|-------|
-| Linux x64 | `cchv-server-linux-x64.tar.gz` |
+| Platform    | Asset                            |
+| ----------- | -------------------------------- |
+| Linux x64   | `cchv-server-linux-x64.tar.gz`   |
 | Linux ARM64 | `cchv-server-linux-arm64.tar.gz` |
-| macOS ARM | `cchv-server-macos-arm64.tar.gz` |
-| macOS x64 | `cchv-server-macos-x64.tar.gz` |
+| macOS ARM   | `cchv-server-macos-arm64.tar.gz` |
+| macOS x64   | `cchv-server-macos-x64.tar.gz`   |
 
 Download from [Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases).
 
 **CLI options:**
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--serve` | — | **Required.** Starts the HTTP server instead of the desktop app |
-| `--port <number>` | `3727` | Server port |
-| `--host <address>` | `0.0.0.0` | Bind address (`127.0.0.1` for local only) |
-| `--base-path <path>` | `/` | Serve WebUI under a path prefix (for example `/cchv`) |
-| `--token <value>` | auto (uuid v4) | Custom authentication token |
-| `--no-auth` | — | Disable authentication (loopback only unless explicitly overridden) |
-| `--allow-unsafe-no-auth` | — | Allow `--no-auth` on network-reachable hosts (dangerous) |
-| `--read-only` | — | Reject mutating API calls such as rename, delete, settings save, and archive changes |
-| `--dist <path>` | embedded | Override built-in frontend with external `dist/` directory |
+| Flag                               | Default        | Description                                                                          |
+| ---------------------------------- | -------------- | ------------------------------------------------------------------------------------ |
+| `--serve`                          | —              | **Required.** Starts the HTTP server instead of the desktop app                      |
+| `--port <number>`                  | `3727`         | Server port                                                                          |
+| `--host <address>`                 | `0.0.0.0`      | Bind address (`127.0.0.1` for local only)                                            |
+| `--base-path <path>`               | `/`            | Serve WebUI under a path prefix (for example `/cchv`)                                |
+| `--token <value>`                  | auto (uuid v4) | Custom authentication token                                                          |
+| `--auth-user <name>`               | —              | Enable account login with this username                                              |
+| `--auth-password-hash <hash>`      | —              | Argon2id PHC password hash for account login                                         |
+| `--print-password-hash <password>` | —              | Print an Argon2id PHC hash and exit                                                  |
+| `--secure-cookies`                 | off            | Add `Secure` to auth cookies for HTTPS reverse proxies                               |
+| `--no-auth`                        | —              | Disable authentication (loopback only unless explicitly overridden)                  |
+| `--allow-unsafe-no-auth`           | —              | Allow `--no-auth` on network-reachable hosts (dangerous)                             |
+| `--read-only`                      | —              | Reject mutating API calls such as rename, delete, settings save, and archive changes |
+| `--dist <path>`                    | embedded       | Override built-in frontend with external `dist/` directory                           |
 
 For reverse proxies that mount the app below a subpath, start the server with the same prefix, for example `cchv-server --serve --base-path /cchv`.
 
 ### Authentication
 
-All `/api/*` endpoints are protected by token authentication. The token is auto-generated on each server start, saved locally, and only a short preview is printed to stderr.
+All `/api/*` endpoints are protected by authentication. By default the server uses token auth for backward compatibility; configure account auth to use a username/password login backed by a server-side session.
+
+**Account login:**
+
+```bash
+CCHV_AUTH_PASSWORD='choose-a-strong-password' cchv-server --serve --print-password-hash
+CCHV_AUTH_USERNAME=admin \
+CCHV_AUTH_PASSWORD_HASH='$argon2id$...' \
+cchv-server --serve --secure-cookies
+```
+
+Account mode stores only an Argon2id PHC password hash, issues an HttpOnly session cookie, rate-limits failed login attempts, and requires CSRF headers for mutating API calls.
+
+**Token login:**
+
+When account auth is not configured, the token is auto-generated on each server start, saved locally, and only a short preview is printed to stderr.
 
 - **Browser access**: Use the `?token=...` URL printed at startup. The browser exchanges it for an HttpOnly cookie and removes the readable stored token after login.
 - **API access**: Include `Authorization: Bearer <token>` header.
 - **Custom token**: `--token my-secret-token` to set your own.
 - **Environment variable**: `CCHV_TOKEN=your-token cchv-server --serve` (useful for systemd/Docker).
+- **HTTPS reverse proxy**: Add `--secure-cookies` so auth cookies are sent only over HTTPS.
 - **Disable**: `--no-auth` to skip authentication on loopback addresses only. For network-reachable hosts, prefer token auth; `--allow-unsafe-no-auth` is required to intentionally bypass this safety guard.
 - **Read-only sharing**: `--read-only` keeps browsing/searching enabled while returning `403` for mutating API calls.
 
@@ -380,13 +401,13 @@ The app includes accessibility features for keyboard-only, low-vision, and scree
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| **Backend** | ![Rust](https://img.shields.io/badge/Rust-000?logo=rust&logoColor=white) ![Tauri](https://img.shields.io/badge/Tauri_v2-24C8D8?logo=tauri&logoColor=white) |
+| Layer        | Technology                                                                                                                                                                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Backend**  | ![Rust](https://img.shields.io/badge/Rust-000?logo=rust&logoColor=white) ![Tauri](https://img.shields.io/badge/Tauri_v2-24C8D8?logo=tauri&logoColor=white)                                                                                                                     |
 | **Frontend** | ![React](https://img.shields.io/badge/React_19-61DAFB?logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white) ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white) |
-| **State** | ![Zustand](https://img.shields.io/badge/Zustand-433E38?logo=react&logoColor=white) |
-| **Build** | ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white) |
-| **i18n** | ![i18next](https://img.shields.io/badge/i18next-26A69A?logo=i18next&logoColor=white) 5 languages |
+| **State**    | ![Zustand](https://img.shields.io/badge/Zustand-433E38?logo=react&logoColor=white)                                                                                                                                                                                             |
+| **Build**    | ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)                                                                                                                                                                                                    |
+| **i18n**     | ![i18next](https://img.shields.io/badge/i18next-26A69A?logo=i18next&logoColor=white) 5 languages                                                                                                                                                                               |
 
 ## Data Privacy
 
@@ -396,11 +417,11 @@ Your data stays on your machine.
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| "No Claude data found" | Make sure `~/.claude` exists with conversation history |
-| Performance issues | Large histories may be slow initially — the app uses virtual scrolling |
-| Update problems | If auto-updater fails, download manually from [Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases) |
+| Problem                | Solution                                                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| "No Claude data found" | Make sure `~/.claude` exists with conversation history                                                                     |
+| Performance issues     | Large histories may be slow initially — the app uses virtual scrolling                                                     |
+| Update problems        | If auto-updater fails, download manually from [Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases) |
 
 ## Contributing
 

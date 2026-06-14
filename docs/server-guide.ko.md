@@ -20,12 +20,12 @@ Claude Code History Viewer를 웹 서버로 실행하세요 — 어디서든 브
 
 ## 어떤 방법을 선택해야 하나요?
 
-| 방법 | 추천 대상 | 난이도 | 비용 |
-|------|-----------|--------|------|
-| **로컬 + 터널** | 빠른 테스트, 데모 | 쉬움 | 무료 |
-| **VPS + 바이너리** | 24/7 원격 접속 | 보통 | ~$5/월 |
-| **Docker + VPS** | Docker 익숙한 분 | 보통 | ~$5/월 |
-| **소스 빌드** | 기여자, 포크 | 어려움 | ~$5/월 |
+| 방법               | 추천 대상         | 난이도 | 비용   |
+| ------------------ | ----------------- | ------ | ------ |
+| **로컬 + 터널**    | 빠른 테스트, 데모 | 쉬움   | 무료   |
+| **VPS + 바이너리** | 24/7 원격 접속    | 보통   | ~$5/월 |
+| **Docker + VPS**   | Docker 익숙한 분  | 보통   | ~$5/월 |
+| **소스 빌드**      | 기여자, 포크      | 어려움 | ~$5/월 |
 
 ---
 
@@ -114,14 +114,15 @@ LTE 폰, 다른 컴퓨터 등 어디서든 접속됩니다.
 
 아래 중 하나에 가입하세요. 가장 저렴한 플랜이면 충분합니다:
 
-| 업체 | 링크 | 가격 |
-|------|------|------|
-| DigitalOcean | [digitalocean.com](https://www.digitalocean.com) | $4/월 |
-| Vultr | [vultr.com](https://www.vultr.com) | $3.50/월 |
-| Hetzner | [hetzner.com](https://www.hetzner.com) | 3.79€/월 |
+| 업체         | 링크                                                   | 가격           |
+| ------------ | ------------------------------------------------------ | -------------- |
+| DigitalOcean | [digitalocean.com](https://www.digitalocean.com)       | $4/월          |
+| Vultr        | [vultr.com](https://www.vultr.com)                     | $3.50/월       |
+| Hetzner      | [hetzner.com](https://www.hetzner.com)                 | 3.79€/월       |
 | Oracle Cloud | [cloud.oracle.com](https://www.oracle.com/cloud/free/) | **무료** (ARM) |
 
 서버 생성 시:
+
 - **OS**: Ubuntu 22.04 또는 24.04
 - **크기**: RAM 1GB이면 충분
 - **지역**: 본인과 가까운 곳
@@ -325,17 +326,21 @@ just serve-dev    # dist/ 디렉토리에서 서빙 (내장 아님)
 
 ### CLI 옵션
 
-| 플래그 | 기본값 | 설명 |
-|--------|--------|------|
-| `--serve` | — | **필수.** 서버 모드 시작 |
-| `--port <숫자>` | `3727` | 서버 포트 |
-| `--host <주소>` | `0.0.0.0` | 바인드 주소 (`127.0.0.1`이면 로컬 전용) |
-| `--base-path <경로>` | `/` | 경로 프리픽스 아래에서 WebUI 제공 (예: `/cchv`) |
-| `--token <값>` | 자동 (uuid) | 고정 토큰 지정 |
-| `--no-auth` | — | loopback 호스트에서만 인증 비활성화 |
-| `--allow-unsafe-no-auth` | — | 네트워크에서 접근 가능한 호스트에 `--no-auth` 허용 (위험) |
-| `--read-only` | — | 이름 변경, 삭제, 설정 저장, 아카이브 변경 등 쓰기 API 거부 |
-| `--dist <경로>` | 내장 에셋 | 외부 dist/ 디렉토리로 오버라이드 |
+| 플래그                             | 기본값      | 설명                                                       |
+| ---------------------------------- | ----------- | ---------------------------------------------------------- |
+| `--serve`                          | —           | **필수.** 서버 모드 시작                                   |
+| `--port <숫자>`                    | `3727`      | 서버 포트                                                  |
+| `--host <주소>`                    | `0.0.0.0`   | 바인드 주소 (`127.0.0.1`이면 로컬 전용)                    |
+| `--base-path <경로>`               | `/`         | 경로 프리픽스 아래에서 WebUI 제공 (예: `/cchv`)            |
+| `--token <값>`                     | 자동 (uuid) | 고정 토큰 지정                                             |
+| `--auth-user <이름>`               | —           | 이 사용자 이름으로 계정 로그인 활성화                      |
+| `--auth-password-hash <hash>`      | —           | 계정 로그인용 Argon2id PHC 비밀번호 hash                   |
+| `--print-password-hash <비밀번호>` | —           | Argon2id PHC hash를 출력하고 종료                          |
+| `--secure-cookies`                 | 꺼짐        | HTTPS 리버스 프록시용 `Secure` auth cookie 사용            |
+| `--no-auth`                        | —           | loopback 호스트에서만 인증 비활성화                        |
+| `--allow-unsafe-no-auth`           | —           | 네트워크에서 접근 가능한 호스트에 `--no-auth` 허용 (위험)  |
+| `--read-only`                      | —           | 이름 변경, 삭제, 설정 저장, 아카이브 변경 등 쓰기 API 거부 |
+| `--dist <경로>`                    | 내장 에셋   | 외부 dist/ 디렉토리로 오버라이드                           |
 
 리버스 프록시에서 앱을 하위 경로에 마운트하는 경우 같은 프리픽스로 서버를 시작하세요:
 
@@ -345,13 +350,35 @@ cchv-server --serve --base-path /cchv
 
 ### 인증
 
-`/api/*` 엔드포인트는 브라우저 인증 cookie 또는 Bearer 헤더를 통한 유효한 토큰이 필요합니다. 토큰은 시작할 때 자동 생성되어 로컬에 저장되며 stderr에는 짧은 미리보기만 출력됩니다.
+`/api/*` 엔드포인트는 인증이 필요합니다. 기존 호환성을 위해 기본값은 token 인증이며, 계정 인증을 설정하면 사용자 이름/비밀번호 로그인과 서버 측 session을 사용합니다.
 
-| 접근 방법 | 사용법 |
-|-----------|--------|
-| 브라우저 | `http://host:3727?token=TOKEN` (HttpOnly cookie로 교환) |
-| API / curl | `Authorization: Bearer TOKEN` 헤더 |
-| SSE | 브라우저 로그인 후 인증 cookie 사용; `?token=TOKEN`은 fallback으로 유지 |
+#### 계정 로그인
+
+Argon2id PHC 비밀번호 hash를 생성합니다:
+
+```bash
+CCHV_AUTH_PASSWORD='강력한-비밀번호' cchv-server --serve --print-password-hash
+```
+
+계정 인증으로 서버를 시작합니다:
+
+```bash
+CCHV_AUTH_USERNAME=admin \
+CCHV_AUTH_PASSWORD_HASH='$argon2id$...' \
+cchv-server --serve --secure-cookies
+```
+
+계정 모드는 비밀번호 hash만 저장하고, HttpOnly session cookie를 발급하며, 로그인 실패를 rate limit하고, 쓰기 API에는 CSRF header를 요구합니다. 브라우저가 HTTPS로 접근하는 경우 `--secure-cookies`를 사용하세요.
+
+#### Token 로그인
+
+계정 인증을 설정하지 않으면 token이 시작할 때 자동 생성되어 로컬에 저장되며 stderr에는 짧은 미리보기만 출력됩니다.
+
+| 접근 방법  | 사용법                                                                  |
+| ---------- | ----------------------------------------------------------------------- |
+| 브라우저   | `http://host:3727?token=TOKEN` (HttpOnly cookie로 교환)                 |
+| API / curl | `Authorization: Bearer TOKEN` 헤더                                      |
+| SSE        | 브라우저 로그인 후 인증 cookie 사용; `?token=TOKEN`은 fallback으로 유지 |
 
 **팁**: `--token 내-고정-토큰`을 사용하면 재시작해도 토큰이 바뀌지 않습니다. systemd와 함께 쓸 때 특히 유용합니다.
 
@@ -376,16 +403,17 @@ GET /health
 
 ### "접속할 수 없음" — 다른 기기에서 안 열림
 
-| 원인 | 해결 |
-|------|------|
-| 서버가 꺼져 있음 | `systemctl status cchv.service` 확인 |
-| IP 주소가 틀림 | VPS의 **공인 IP**를 사용 (`0.0.0.0`이나 `192.168.x.x`가 아님) |
-| 방화벽이 포트 차단 | `sudo ufw allow 3727/tcp` + VPS 업체 보안그룹 확인 |
-| 포트가 이미 사용 중 | `lsof -ti :3727 \| xargs kill` 또는 `--port 3728` |
+| 원인                | 해결                                                          |
+| ------------------- | ------------------------------------------------------------- |
+| 서버가 꺼져 있음    | `systemctl status cchv.service` 확인                          |
+| IP 주소가 틀림      | VPS의 **공인 IP**를 사용 (`0.0.0.0`이나 `192.168.x.x`가 아님) |
+| 방화벽이 포트 차단  | `sudo ufw allow 3727/tcp` + VPS 업체 보안그룹 확인            |
+| 포트가 이미 사용 중 | `lsof -ti :3727 \| xargs kill` 또는 `--port 3728`             |
 
 ### "401 Unauthorized" — 인증 오류
 
 토큰이 틀리거나 빠져 있습니다:
+
 1. URL에 `?token=올바른_토큰` 확인
 2. 브라우저에서 `?token=...` URL을 연 뒤 인증 cookie가 생성되었는지 확인
 3. 서버 로그에서 `🔑 Auth token: ...` 확인
@@ -396,6 +424,7 @@ GET /health
 서버가 **로컬 머신**에서 실행 중입니다. 로컬 IP(`192.168.x.x`)는 인터넷에서 접근할 수 없습니다.
 
 해결:
+
 1. [방법 1 (터널)](#방법-1-로컬--터널) — 임시 접속
 2. [방법 2 (VPS)](#방법-2-vps에-설치) — 상시 접속
 
@@ -418,4 +447,4 @@ echo "your-domain.com { reverse_proxy localhost:3727 }" | sudo tee /etc/caddy/Ca
 sudo systemctl restart caddy
 ```
 
-이후 `https://your-domain.com?token=...`으로 접속.
+그런 다음 서버를 `--secure-cookies`와 함께 시작하고 `https://your-domain.com`으로 접속하세요.
