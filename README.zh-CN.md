@@ -267,11 +267,14 @@ cchv-server --serve
 | `--serve` | — | **必需。** 启动 HTTP 服务器而非桌面应用 |
 | `--port <number>` | `3727` | 服务器端口 |
 | `--host <address>` | `0.0.0.0` | 绑定地址（仅本地: `127.0.0.1`） |
+| `--base-path <path>` | `/` | 在路径前缀下提供 WebUI（例如 `/cchv`） |
 | `--token <value>` | 自动 (uuid v4) | 自定义认证令牌 |
 | `--no-auth` | — | 禁用认证（仅 loopback 地址直接允许） |
 | `--allow-unsafe-no-auth` | — | 允许在网络可访问地址上使用 `--no-auth`（危险） |
 | `--read-only` | — | 拒绝重命名、删除、保存设置、修改归档等写入 API |
 | `--dist <path>` | 内嵌 | 使用外部 `dist/` 目录替代内嵌前端 |
+
+如果反向代理把应用挂载在子路径下，请用相同前缀启动服务器，例如 `cchv-server --serve --base-path /cchv`。
 
 ### 认证
 

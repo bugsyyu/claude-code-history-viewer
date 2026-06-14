@@ -340,11 +340,18 @@ Edit frontend code → `pnpm build` → refresh browser.
 | `--serve` | — | **Required.** Start server mode |
 | `--port <number>` | `3727` | Server port |
 | `--host <address>` | `0.0.0.0` | Bind address (`127.0.0.1` for local only) |
+| `--base-path <path>` | `/` | Serve WebUI under a path prefix, e.g. `/cchv` |
 | `--token <value>` | auto (uuid) | Set a fixed auth token |
 | `--no-auth` | — | Disable authentication on loopback hosts only |
 | `--allow-unsafe-no-auth` | — | Allow `--no-auth` on network-reachable hosts (dangerous) |
 | `--read-only` | — | Reject mutating API calls such as rename, delete, settings save, and archive changes |
 | `--dist <path>` | embedded | Serve frontend from filesystem instead of embedded |
+
+When a reverse proxy mounts the app under a subpath, pass the same prefix to the server:
+
+```bash
+cchv-server --serve --base-path /cchv
+```
 
 ### Authentication
 
