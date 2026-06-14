@@ -359,8 +359,9 @@ describe("useSessionEditing clipboard actions", () => {
       } as unknown as React.MouseEvent);
     });
 
+    const onDeleteDialogOpenChange = result.current.setIsDeleteDialogOpen;
     act(() => {
-      result.current.setIsDeleteDialogOpen(false);
+      onDeleteDialogOpenChange(false);
     });
 
     expect(result.current.isDeleteDialogOpen).toBe(false);
