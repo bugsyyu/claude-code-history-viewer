@@ -278,9 +278,9 @@ cchv-server --serve
 
 ### 认证
 
-所有 `/api/*` 端点受 Bearer 令牌认证保护。令牌在每次服务器启动时自动生成、保存到本地，并且只会向 stderr 输出短预览。
+所有 `/api/*` 端点受令牌认证保护。令牌在每次服务器启动时自动生成、保存到本地，并且只会向 stderr 输出短预览。
 
-- **浏览器访问**: 使用启动时输出的 `?token=...` URL。令牌自动保存到 `localStorage`。
+- **浏览器访问**: 使用启动时输出的 `?token=...` URL。浏览器会将其换成 HttpOnly cookie，并在登录后移除可被脚本读取的本地令牌。
 - **API 访问**: 包含 `Authorization: Bearer <token>` 请求头。
 - **自定义令牌**: `--token my-secret-token` 设置自定义令牌。
 - **禁用**: `--no-auth` 仅允许在 loopback 地址上跳过认证。网络可访问地址建议保留 token 认证；如果确实要绕过安全保护，需要显式添加 `--allow-unsafe-no-auth`。

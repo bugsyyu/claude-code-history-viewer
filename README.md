@@ -282,9 +282,9 @@ For reverse proxies that mount the app below a subpath, start the server with th
 
 ### Authentication
 
-All `/api/*` endpoints are protected by Bearer token authentication. The token is auto-generated on each server start, saved locally, and only a short preview is printed to stderr.
+All `/api/*` endpoints are protected by token authentication. The token is auto-generated on each server start, saved locally, and only a short preview is printed to stderr.
 
-- **Browser access**: Use the `?token=...` URL printed at startup. The token is saved to `localStorage` automatically.
+- **Browser access**: Use the `?token=...` URL printed at startup. The browser exchanges it for an HttpOnly cookie and removes the readable stored token after login.
 - **API access**: Include `Authorization: Bearer <token>` header.
 - **Custom token**: `--token my-secret-token` to set your own.
 - **Environment variable**: `CCHV_TOKEN=your-token cchv-server --serve` (useful for systemd/Docker).
