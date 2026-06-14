@@ -5,6 +5,14 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
+const isNodePackage = (id: string, packageName: string) => {
+  const normalized = id.replaceAll("\\", "/");
+  return (
+    normalized.includes(`/node_modules/${packageName}/`) ||
+    normalized.endsWith(`/node_modules/${packageName}`)
+  );
+};
+
 // https://vite.dev/config/
 export default defineConfig(async () => {
   const useMock = process.env.VITE_MOCK === "1";
@@ -51,8 +59,14 @@ export default defineConfig(async () => {
             return "i18n-vendor";
           }
 
-          // Core React bundle
-          if (id.includes("react") || id.includes("react-dom")) {
+          // Core React bundle. Keep this exact; broad substring matching pulls
+          // packages such as @radix-ui/react-* into React's chunk and can create
+          // ESM initialization cycles in production builds.
+          if (
+            isNodePackage(id, "react") ||
+            isNodePackage(id, "react-dom") ||
+            isNodePackage(id, "scheduler")
+          ) {
             return "react-vendor";
           }
 
