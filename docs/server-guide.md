@@ -343,6 +343,7 @@ Edit frontend code → `pnpm build` → refresh browser.
 | `--token <value>` | auto (uuid) | Set a fixed auth token |
 | `--no-auth` | — | Disable authentication on loopback hosts only |
 | `--allow-unsafe-no-auth` | — | Allow `--no-auth` on network-reachable hosts (dangerous) |
+| `--read-only` | — | Reject mutating API calls such as rename, delete, settings save, and archive changes |
 | `--dist <path>` | embedded | Serve frontend from filesystem instead of embedded |
 
 ### Authentication
@@ -358,6 +359,8 @@ All `/api/*` endpoints require a Bearer token. The token is auto-generated on ea
 **Tip**: Use `--token my-fixed-token` for a persistent token that doesn't change between restarts. Especially useful with systemd.
 
 `--no-auth` is accepted by default only when the server is bound to a loopback host such as `127.0.0.1` or `localhost`. For network-reachable hosts, keep token auth enabled or add `--allow-unsafe-no-auth` only when you intentionally want unauthenticated network access.
+
+Use `--read-only` for shared viewers that should browse/search history without changing local session files, metadata, settings, or archives.
 
 ### Real-time updates
 

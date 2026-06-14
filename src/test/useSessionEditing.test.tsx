@@ -63,6 +63,7 @@ describe("useSessionEditing clipboard actions", () => {
       selectedProject: null,
       selectedSession: null,
       sessions: [],
+      isServerReadOnly: false,
     });
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -278,6 +279,24 @@ describe("useSessionEditing clipboard actions", () => {
     expect(execCommand).toHaveBeenCalledWith("copy");
     expect(toast.success).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith("Copy failed");
+  });
+
+  it("disables mutating session actions in server read-only mode", () => {
+    useAppStore.setState({ isServerReadOnly: true });
+
+    const { result } = renderHook(() => useSessionEditing(session));
+
+    expect(result.current.isServerReadOnly).toBe(true);
+    expect(result.current.supportsNativeRename).toBe(false);
+    expect(result.current.supportsSessionDeletion).toBe(false);
+
+    act(() => {
+      result.current.handleDoubleClick({
+        stopPropagation: vi.fn(),
+      } as unknown as React.MouseEvent);
+    });
+
+    expect(result.current.isEditing).toBe(false);
   });
 
   it("opens the in-app confirmation dialog before deleting a session", () => {

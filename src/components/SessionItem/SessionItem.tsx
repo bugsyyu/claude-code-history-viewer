@@ -81,6 +81,7 @@ export const SessionItem: React.FC<SessionItemProps> = ({
             isNamed={editing.isNamed}
             isSelected={isSelected}
             isContextMenuOpen={editing.isContextMenuOpen}
+            readOnly={editing.isServerReadOnly}
             providerId={editing.providerId}
             supportsNativeRename={editing.supportsNativeRename}
             supportsResumeCommand={editing.supportsResumeCommand}
@@ -118,6 +119,7 @@ export const SessionItem: React.FC<SessionItemProps> = ({
         <SessionContextMenu
           position={contextMenu}
           hasCustomName={editing.hasCustomName}
+          readOnly={editing.isServerReadOnly}
           supportsNativeRename={editing.supportsNativeRename}
           supportsResumeCommand={editing.supportsResumeCommand}
           supportsSessionDeletion={editing.supportsSessionDeletion}

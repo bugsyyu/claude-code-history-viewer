@@ -270,6 +270,7 @@ cchv-server --serve
 | `--token <value>` | 自動 (uuid v4) | 自訂驗證權杖 |
 | `--no-auth` | — | 停用驗證（僅 loopback 位址直接允許） |
 | `--allow-unsafe-no-auth` | — | 允許在網路可存取位址上使用 `--no-auth`（危險） |
+| `--read-only` | — | 拒絕重新命名、刪除、儲存設定、修改封存等寫入 API |
 | `--dist <path>` | 內嵌 | 使用外部 `dist/` 目錄取代內嵌前端 |
 
 ### 驗證
@@ -280,6 +281,7 @@ cchv-server --serve
 - **API 存取**: 包含 `Authorization: Bearer <token>` 請求標頭。
 - **自訂權杖**: `--token my-secret-token` 設定自訂權杖。
 - **停用**: `--no-auth` 僅允許在 loopback 位址上略過驗證。網路可存取位址建議保留 token 驗證；若確實要繞過安全保護，需要明確加入 `--allow-unsafe-no-auth`。
+- **唯讀分享**: `--read-only` 保留瀏覽與搜尋能力，但寫入類 API 會返回 `403`。
 
 ### 即時更新
 

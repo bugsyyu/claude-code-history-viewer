@@ -270,6 +270,7 @@ cchv-server --serve
 | `--token <value>` | 自动 (uuid v4) | 自定义认证令牌 |
 | `--no-auth` | — | 禁用认证（仅 loopback 地址直接允许） |
 | `--allow-unsafe-no-auth` | — | 允许在网络可访问地址上使用 `--no-auth`（危险） |
+| `--read-only` | — | 拒绝重命名、删除、保存设置、修改归档等写入 API |
 | `--dist <path>` | 内嵌 | 使用外部 `dist/` 目录替代内嵌前端 |
 
 ### 认证
@@ -280,6 +281,7 @@ cchv-server --serve
 - **API 访问**: 包含 `Authorization: Bearer <token>` 请求头。
 - **自定义令牌**: `--token my-secret-token` 设置自定义令牌。
 - **禁用**: `--no-auth` 仅允许在 loopback 地址上跳过认证。网络可访问地址建议保留 token 认证；如果确实要绕过安全保护，需要显式添加 `--allow-unsafe-no-auth`。
+- **只读共享**: `--read-only` 保留浏览和搜索能力，但写入类 API 会返回 `403`。
 
 ### 实时更新
 

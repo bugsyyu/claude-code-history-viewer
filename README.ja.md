@@ -270,6 +270,7 @@ cchv-server --serve
 | `--token <value>` | 自動 (uuid v4) | カスタム認証トークン |
 | `--no-auth` | — | 認証を無効化（loopbackアドレスのみ直接許可） |
 | `--allow-unsafe-no-auth` | — | ネットワーク到達可能なホストで`--no-auth`を許可（危険） |
+| `--read-only` | — | リネーム、削除、設定保存、アーカイブ変更などの書き込みAPIを拒否 |
 | `--dist <path>` | 内蔵 | 内蔵フロントエンドの代わりに外部`dist/`ディレクトリを使用 |
 
 ### 認証
@@ -280,6 +281,7 @@ cchv-server --serve
 - **APIアクセス**: `Authorization: Bearer <token>`ヘッダーを含める。
 - **カスタムトークン**: `--token my-secret-token`で独自に設定。
 - **無効化**: `--no-auth`はloopbackアドレスでのみ認証をスキップできます。ネットワーク到達可能なホストではtoken認証を推奨します。意図的に安全ガードを回避する場合は`--allow-unsafe-no-auth`が必要です。
+- **読み取り専用共有**: `--read-only`では閲覧と検索は可能ですが、書き込み系APIは`403`を返します。
 
 ### リアルタイム更新
 

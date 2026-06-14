@@ -270,6 +270,7 @@ cchv-server --serve
 | `--token <value>` | 자동 (uuid v4) | 커스텀 인증 토큰 |
 | `--no-auth` | — | 인증 비활성화 (loopback 주소에서만 직접 허용) |
 | `--allow-unsafe-no-auth` | — | 네트워크에서 접근 가능한 호스트에 `--no-auth` 허용 (위험) |
+| `--read-only` | — | 이름 변경, 삭제, 설정 저장, 아카이브 변경 등 쓰기 API 거부 |
 | `--dist <path>` | 내장 | 내장 프론트엔드 대신 외부 `dist/` 디렉토리 사용 |
 
 ### 인증
@@ -280,6 +281,7 @@ cchv-server --serve
 - **API 접근**: `Authorization: Bearer <token>` 헤더 포함.
 - **커스텀 토큰**: `--token my-secret-token`으로 직접 설정.
 - **비활성화**: `--no-auth`는 loopback 주소에서만 인증을 건너뜁니다. 네트워크에서 접근 가능한 호스트에는 token 인증을 권장하며, 의도적으로 안전 가드를 우회하려면 `--allow-unsafe-no-auth`가 필요합니다.
+- **읽기 전용 공유**: `--read-only`는 탐색과 검색은 허용하지만 쓰기 API에는 `403`을 반환합니다.
 
 ### 실시간 업데이트
 
